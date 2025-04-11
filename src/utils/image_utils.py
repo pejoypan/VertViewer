@@ -18,3 +18,13 @@ def to_QImage(ndarray: np.ndarray):
         raise ValueError("Unsupported number of channels")
 
     return qimage
+
+def cn_to_format(cn):
+    if cn == 1:
+        return QImage.Format_Grayscale8
+    elif cn == 3:
+        return QImage.Format_BGR888
+    elif cn == 4:
+        return QImage.Format_BGRA8888
+    else:
+        raise ValueError("Unsupported number of channels")
