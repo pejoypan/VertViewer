@@ -1,25 +1,31 @@
 # main.py
-from PySide6.QtWidgets import QMainWindow, QLabel, QApplication
-from PySide6.QtGui import QPixmap
+from PySide6.QtWidgets import QMainWindow, QLabel, QApplication, QWidget
+from PySide6.QtGui import QPixmap, QImage
+from PySide6.QtCore import Qt, Slot
 from threads.receiver import ImageReceiverThread
+from ui.ui_frame import Ui_Frame
 
-class MainWindow(QMainWindow):
+class FrameWindow(QWidget): # TODO: just for test now, should change to Mainwindow
     def __init__(self):
         super().__init__()
+        self.ui = Ui_Frame()
+        self.ui.setupUi(self)
+
         self.setWindowTitle("ZeroMQ Image Viewer")
 
         self.label = QLabel("等待图像", self)
-        self.label.setFixedSize(512, 512)
-        self.setCentralWidget(self.label)
+        self.ui.scrollArea.setWidget(self.label)
 
         self.receiver_thread = ImageReceiverThread("tcp://127.0.0.1:5555")
-        self.receiver_thread.image_received.connect(self.update_image)
+        self.receiver_thread.image_received.connect(self._update_image)
         self.receiver_thread.start()
 
-    def update_image(self, device_id, qimg):
+    @Slot(str, int, QImage)
+    def _update_image(self, device_id, frame_id, qimg):
         pixmap = QPixmap.fromImage(qimg).scaled(self.label.size())
         self.label.setPixmap(pixmap)
-        self.setWindowTitle(f"图像来自设备: {device_id}")
+        self.ui.label_user_id.setText(f'from "{device_id}"')
+        self.ui.label_id.setText(f"ID: {frame_id}")
 
     def closeEvent(self, event):
         print("关闭窗口，退出线程")
@@ -34,6 +40,6 @@ import sys
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = MainWindow()
+    window = FrameWindow()
     window.show()
     sys.exit(app.exec())
