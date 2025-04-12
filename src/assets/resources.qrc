@@ -1,0 +1,12 @@
+<RCC>
+  <qresource prefix="/icons">
+    <file>icons/logout.png</file>
+    <file>icons/pause.png</file>
+    <file>icons/play.png</file>
+    <file>icons/reset-48.png</file>
+    <file>icons/reset.gif</file>
+    <file>icons/setting.png</file>
+    <file>icons/translate.png</file>
+    <file>icons/change-user-48.png</file>
+  </qresource>
+</RCC>
