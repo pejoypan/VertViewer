@@ -1,6 +1,7 @@
 <RCC>
   <qresource prefix="/icons">
     <file>icons/logout.png</file>
+    <file>icons/no-camera-48.png</file>
     <file>icons/pause.png</file>
     <file>icons/play.png</file>
     <file>icons/reset-48.png</file>

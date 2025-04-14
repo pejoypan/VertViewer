@@ -50,6 +50,16 @@ class MainWindow(QMainWindow):
         self.frame_layout.addWidget(fwin5, 1, 2)
         # FIXME
 
+        # receive control button
+        self.button_stop_receive = QPushButton(self.ui.scrollArea)
+        icon = QIcon()
+        icon.addFile(u":/icons/icons/no-camera-48.png", QSize(), QIcon.Normal, QIcon.Off)
+        self.button_stop_receive.setIcon(icon)
+        self.button_stop_receive.setIconSize(QSize(48, 48))
+        self.button_stop_receive.setCheckable(True)
+        self.button_stop_receive.toggled.connect(self._on_toggle_recv)
+        self.frame_layout.addWidget(self.button_stop_receive)
+
         self.ui.scrollArea.setWidget(self.frame_windows)    
 
         # log receiver
@@ -82,6 +92,10 @@ class MainWindow(QMainWindow):
         if result:
             self.log_table._append_log(*result)
         self.log_table.scrollToBottom()
+
+    @Slot(bool)
+    def _on_toggle_recv(self, checked):
+        self.image_receiver_thread.set_paused(checked)
 
     def closeEvent(self, event):
         print("关闭窗口，退出线程")
