@@ -16,10 +16,12 @@ from widgets.draggable_label import DraggableLabel
 import utils.time_utils as time_utils
 
 class FrameWindow(QWidget):
-    def __init__(self, size_hint=(512, 512), scale_hint=0.5):
+    def __init__(self, user_id, size_hint=(512, 512), scale_hint=0.5):
         super().__init__()
         self.ui = Ui_Frame()
         self.ui.setupUi(self)
+
+        self.user_id = user_id
 
 
         self.image_label = DraggableLabel(self, self.ui.scrollArea, zoom_callback=self._zoom_by_wheel)

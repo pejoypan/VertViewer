@@ -231,6 +231,9 @@
             <property name="frameShadow">
              <enum>QFrame::Shadow::Plain</enum>
             </property>
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignCenter</set>
+            </property>
             <widget class="QWidget" name="scrollAreaWidgetContents">
              <property name="geometry">
               <rect>
