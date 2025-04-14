@@ -6,7 +6,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon, QStandardItemModel, QStandardItem,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QHeaderView,
+from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QHeaderView, QStackedLayout,
     QLabel, QPushButton, QScrollArea, QSizePolicy, QMessageBox, QMenu, QGridLayout,
     QTableView, QToolButton, QVBoxLayout, QWidget, QMainWindow)
 from widgets.frame_window import FrameWindow
@@ -14,6 +14,7 @@ from threads.image_receiver import ImageReceiverThread
 from threads.log_receiver import LogReceiverThread
 import utils.log_utils as log_utils
 import assets.resources_rc
+from widgets.log_table import LogTable
 from ui.ui_mainwindow import Ui_MainWindow
 
 
@@ -22,8 +23,6 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-
-        self.MAX_LOG_LINES = 10
 
         self.frame_layout = QGridLayout()
         self.frame_windows = QWidget(self)
@@ -63,17 +62,14 @@ class MainWindow(QMainWindow):
         self.image_receiver_thread.image_received.connect(self._update_image)
         self.image_receiver_thread.start()
 
-        # log model TODO: 1. export to csv 2. clear up 3. filter
-        self.log_model = QStandardItemModel(0, 4, self)
-        self.log_model.setHorizontalHeaderLabels(["Time", "Level", "Source", "Detail"])
-        self.ui.tableView.setModel(self.log_model)
-
-        self.ui.tableView.horizontalHeader().setStretchLastSection(True)
-        self.ui.tableView.verticalHeader().setVisible(False)
-        self.ui.tableView.setAlternatingRowColors(True)
-        self.ui.tableView.setColumnWidth(0, 155)   # time
-        self.ui.tableView.setColumnWidth(1, 85)   # level
-        self.ui.tableView.setColumnWidth(2, 60)  # source
+        # log table
+        self.ui.left_part.layout().removeWidget(self.ui.widget_log_control)
+        stacked_layout = QStackedLayout(self.ui.log_widget)
+        stacked_layout.setStackingMode(QStackedLayout.StackAll)
+        stacked_layout.addWidget(self.ui.widget_log_control)
+        stacked_layout.setAlignment(self.ui.widget_log_control, Qt.AlignTop)
+        self.log_table = LogTable(self, clear_btn=self.ui.button_clear_log, export_btn=self.ui.button_log_export, filter_btn=self.ui.button_log_filter)
+        stacked_layout.addWidget(self.log_table)
 
 
     @Slot(str, int, QImage)
@@ -81,23 +77,11 @@ class MainWindow(QMainWindow):
         self.frame_window._update_image(device_id, frame_id, qimg)
 
     @Slot(str)
-    def _update_log(self, msg):
-        result = log_utils.parse_log_line(msg)
+    def _update_log(self, zmqmsg):
+        result = log_utils.parse_log_line(zmqmsg)
         if result:
-            time, level, source, detail = result
-            emoji = log_utils.get_emoji(level)
-            row = [
-                QStandardItem(time),
-                QStandardItem(f"{emoji} {level}"),
-                QStandardItem(source),
-                QStandardItem(detail),
-            ]
-            emoji = log_utils.get_emoji(level)
-            for item in row:
-                item.setEditable(False)
-            if self.log_model.rowCount() >= self.MAX_LOG_LINES:
-                self.log_model.removeRow(self.log_model.rowCount() - 1)
-            self.log_model.insertRow(0, row)
+            self.log_table._append_log(*result)
+        self.log_table.scrollToBottom()
 
     def closeEvent(self, event):
         print("关闭窗口，退出线程")
