@@ -22,6 +22,7 @@ class FrameWindow(QWidget):
         self.ui.setupUi(self)
 
         self.user_id = user_id
+        self.ui.label_user_id.setText(str(user_id))
 
 
         self.image_label = DraggableLabel(self, self.ui.scrollArea, zoom_callback=self._zoom_by_wheel)
@@ -77,7 +78,6 @@ class FrameWindow(QWidget):
     @Slot(str, int, QImage)
     def _update_image(self, device_id, frame_id, qimg):
         self.image_label.setPixmap(QPixmap.fromImage(qimg))
-        self.ui.label_user_id.setText(str(device_id)) # TODO: can set at initialization
         self.ui.label_id.setText(str(frame_id))
         self.fps_frame_count += 1
 
