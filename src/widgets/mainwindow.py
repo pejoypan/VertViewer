@@ -29,13 +29,8 @@ class MainWindow(QMainWindow):
         self.setFixedSize(self.fixed_size[0], self.fixed_size[1])
 
         # log table
-        self.ui.left_part.layout().removeWidget(self.ui.widget_log_control)
-        stacked_layout = QStackedLayout(self.ui.log_widget)
-        stacked_layout.setStackingMode(QStackedLayout.StackAll)
-        stacked_layout.addWidget(self.ui.widget_log_control)
-        stacked_layout.setAlignment(self.ui.widget_log_control, Qt.AlignTop)
         self.log_table = LogTable(self, clear_btn=self.ui.button_clear_log, export_btn=self.ui.button_log_export, filter_btn=self.ui.button_log_filter)
-        stacked_layout.addWidget(self.log_table)
+        self.ui.log_widget.layout().insertWidget(0, self.log_table)
 
 
         self.frame_layout = QGridLayout()
