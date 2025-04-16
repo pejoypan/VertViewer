@@ -29,6 +29,10 @@ class FrameWindow(QWidget):
         self.image_label.resize(size_hint[0], size_hint[1])
         self._scale_factor = scale_hint
         self.ui.scrollArea.setWidget(self.image_label)
+        margin = self.ui.scrollArea.frameWidth() * 2
+        self.ui.scrollArea.setFixedSize(size_hint[0] + margin, size_hint[1] + margin)
+        self.ui.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.ui.scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         self.ui.verticalLayout.removeWidget(self.ui.horizontalWidget)
         self.ui.verticalLayout.removeWidget(self.ui.scrollArea)

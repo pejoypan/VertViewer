@@ -28,6 +28,10 @@ class MainWindow(QMainWindow):
         self.fixed_size = kwargs.get("size", (1920, 1080))
         self.setFixedSize(self.fixed_size[0], self.fixed_size[1])
 
+        stretch = kwargs.get("stretch", [2, 1])
+        for i, factor in enumerate(stretch):
+            self.ui.main_panel.layout().setStretch(i, factor)
+
         # log table
         self.log_table = LogTable(self, clear_btn=self.ui.button_clear_log, export_btn=self.ui.button_log_export, filter_btn=self.ui.button_log_filter)
         self.ui.log_widget.layout().insertWidget(0, self.log_table)
@@ -42,7 +46,9 @@ class MainWindow(QMainWindow):
 
         frame_window_node = kwargs.get("frame_window", None)
         if frame_window_node:
-            self.frame_layout.setSpacing(frame_window_node.get("spacing", 8))
+            hspacing, vspacing = frame_window_node.get("spacing", (10, 10))
+            self.frame_layout.setHorizontalSpacing(hspacing)
+            self.frame_layout.setVerticalSpacing(vspacing)
             num_cols = frame_window_node.get("num_cols", 3)
             num_rows = frame_window_node.get("num_rows", 2)
             size_hint = frame_window_node.get("size_hint", (512, 512))
