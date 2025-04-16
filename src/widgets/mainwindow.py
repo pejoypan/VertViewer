@@ -95,10 +95,10 @@ class MainWindow(QMainWindow):
 
 
 
-    @Slot(str, int, QImage)
-    def _update_image(self, device_id, frame_id, qimg):
+    @Slot(str, int, QImage, int)
+    def _update_image(self, device_id, frame_id, qimg, err_count):
         assert device_id in self.frame_window_table, f"device_id {device_id} not in frame_window_table"
-        self.frame_window_table[device_id]._update_image(device_id, frame_id, qimg)
+        self.frame_window_table[device_id]._update_image(device_id, frame_id, qimg, err_count)
 
 
     @Slot(str)

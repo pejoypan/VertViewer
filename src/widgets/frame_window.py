@@ -75,10 +75,11 @@ class FrameWindow(QWidget):
         self.ui.toolButton.setMenu(menu)
 
 
-    @Slot(str, int, QImage)
-    def _update_image(self, device_id, frame_id, qimg):
+    @Slot(str, int, QImage, int)
+    def _update_image(self, device_id, frame_id, qimg, err_count):
         self.image_label.setPixmap(QPixmap.fromImage(qimg))
         self.ui.label_id.setText(str(frame_id))
+        self.ui.label_error.setText(str(err_count))
         self.fps_frame_count += 1
 
     @Slot()
