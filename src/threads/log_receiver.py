@@ -11,7 +11,7 @@ class LogReceiverThread(QThread):
     def run(self):
         context = zmq.Context()
         socket = context.socket(zmq.PULL)
-        socket.connect(self.zmq_address)
+        socket.bind(self.zmq_address)
         while not self.isInterruptionRequested():
             try:
                 msg = socket.recv_string(flags=zmq.NOBLOCK)

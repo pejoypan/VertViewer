@@ -36,7 +36,7 @@ class ImageReceiverThread(QThread):
     def run(self):
         context = zmq.Context()
         socket = context.socket(zmq.SUB)
-        socket.connect(self.zmq_address)
+        socket.bind(self.zmq_address)
         socket.setsockopt_string(zmq.SUBSCRIBE, "")  # subscribe all
         socket.setsockopt(zmq.CONFLATE, 1) # warn! only preseve the last frame
         while not self.isInterruptionRequested():
