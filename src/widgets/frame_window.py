@@ -28,6 +28,8 @@ class FrameWindow(QWidget):
         self.image_label = DraggableLabel(self, self.ui.scrollArea, zoom_callback=self._zoom_by_wheel)
         self.image_label.resize(size_hint[0], size_hint[1])
         self._scale_factor = scale_hint
+        self.MIN_SCALE_FACTOR = max(scale_hint * 0.1, 0.2)
+        self.MAX_SCALE_FACTOR = min(scale_hint * 10.0, 5.0)
         self.ui.scrollArea.setWidget(self.image_label)
         margin = self.ui.scrollArea.frameWidth() * 2
         self.ui.scrollArea.setFixedSize(size_hint[0] + margin, size_hint[1] + margin)
@@ -116,7 +118,11 @@ class FrameWindow(QWidget):
             QMessageBox.information(self, "Success", f"Image saved to\n{save_path}")
 
     def _scale_image(self, factor):
-        self._scale_factor *= factor
+        new_scale = self._scale_factor * factor
+        if new_scale < self.MIN_SCALE_FACTOR or new_scale > self.MAX_SCALE_FACTOR:
+            return
+        
+        self._scale_factor = new_scale
 
         new_size = self._scale_factor * self.image_label.pixmap().size()
         self.image_label.resize(new_size)
