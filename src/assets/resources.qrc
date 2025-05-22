@@ -9,5 +9,9 @@
     <file>icons/setting.png</file>
     <file>icons/translate.png</file>
     <file>icons/change-user-48.png</file>
+    <file>icons/state/error.png</file>
+    <file>icons/state/exit.png</file>
+    <file>icons/state/waiting.png</file>
+    <file>icons/state/working.png</file>
   </qresource>
 </RCC>

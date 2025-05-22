@@ -1,15 +1,21 @@
 # mainwindow.py
+import subprocess
+import sys
+import time
+from pathlib import Path
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-    QMetaObject, QObject, QPoint, QRect, QPointF,
+    QMetaObject, QObject, QPoint, QRect, QPointF, QProcess,
     QSize, QTime, QUrl, Qt, Slot, QTimer, QStandardPaths)
 from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon, QStandardItemModel, QStandardItem,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QHeaderView, QStackedLayout,
-    QLabel, QPushButton, QScrollArea, QSizePolicy, QMessageBox, QMenu, QGridLayout, QSpacerItem,
+    QLabel, QPushButton, QScrollArea, QSizePolicy, QMessageBox, QMenu, QGridLayout, QSpacerItem, QListWidgetItem,
     QTableView, QToolButton, QVBoxLayout, QWidget, QMainWindow)
+from qfluentwidgets import MessageBox
 from widgets.frame_window import FrameWindow
+from widgets.waiting_dialog import Waiting
 from threads.image_receiver import ImageReceiverThread
 from threads.log_receiver import LogReceiverThread
 import utils.log_utils as log_utils
@@ -20,6 +26,9 @@ from ui.ui_mainwindow import Ui_MainWindow
 
 
 class MainWindow(QMainWindow):
+
+    START_DELAY = 500 # ms
+
     def __init__(self, **kwargs):
         super().__init__()
         self.ui = Ui_MainWindow()
@@ -99,6 +108,75 @@ class MainWindow(QMainWindow):
         self.image_receiver_thread.image_received.connect(self._update_image)
         self.image_receiver_thread.start()
 
+        # status list
+        self.icon_error = QIcon(u":/icons/icons/state/error.png")
+        self.icon_exit = QIcon(u":/icons/icons/state/exit.png")
+        self.icon_waiting = QIcon(u":/icons/icons/state/waiting.png")
+        self.icon_working = QIcon(u":/icons/icons/state/working.png")
+        
+
+        # start vision edge rt
+        self.vert_processes = {}
+        Waiting.show("启动VisionEdgeRT", timeout_ms=5000, parent=self)
+        QTimer.singleShot(self.START_DELAY, self.start_vision_edge_rt)
+
+    def start_vision_edge_rt(self):
+        exe_path = Path("C:/VisionEdgeRT/bin/VERT.exe")
+        if not exe_path.exists():
+            w = MessageBox("Error", f"Cannot find bin @ {exe_path}.")
+            w.exec()
+            sys.exit(1)
+        
+        configs = [
+                    Path("D:/repository/VertPlayground/init0.yaml"), 
+                    Path("D:/repository/VertPlayground/init1.yaml"),
+                    Path("D:/repository/VertPlayground/init2.yaml"),
+                    Path("D:/repository/VertPlayground/init3.yaml"),
+                  ]
+
+        for i, config in enumerate(configs):
+            if not config.exists():
+                w = MessageBox("Error", f"Cannot find config @ {config}.")
+                w.exec()
+                sys.exit(1)
+            
+            QTimer.singleShot(i * self.START_DELAY, lambda c=config: self._start_single_proc(c, exe_path))
+        
+
+        Waiting.stop()
+
+    def _start_single_proc(self, config, exe_path):
+        short_name = config.stem
+        proc = QProcess(self)
+        proc.setProgram(str(exe_path))
+        proc.setArguments(['--config', str(config)])
+        proc.setProcessChannelMode(QProcess.MergedChannels)
+
+        proc.started.connect(lambda cfg=short_name: self._on_vert_process_started(cfg))
+        proc.finished.connect(lambda code, status, cfg=short_name: self._on_vert_process_finished(code, status, cfg))
+        proc.errorOccurred.connect(lambda err, cfg=short_name: self._on_vert_process_error(cfg, err))
+        proc.readyReadStandardOutput.connect(lambda cfg=short_name, p=proc: self._on_vert_process_out(cfg, p))
+
+        proc.start()
+        self.vert_processes[short_name] = proc
+
+    @Slot(str, QIcon, str)
+    def _update_process_status(self, name:str, icon:QIcon, msg:str=None):
+        found = False
+        for i in range(self.ui.widget_process_status.count()):
+            item =self.ui.widget_process_status.item(i)
+            if item.text().startswith(name):
+                item.setIcon(icon)
+                if msg:
+                    item.setText(f"{name} - {msg}")
+                found = True
+                break
+        if not found:
+            item = QListWidgetItem()
+            item.setIcon(icon)
+            item.setText(f"{name} - {msg}") if msg else item.setText(name)
+            self.ui.widget_process_status.addItem(item)
+
 
 
     @Slot(str, int, QImage, int)
@@ -106,6 +184,31 @@ class MainWindow(QMainWindow):
         assert device_id in self.frame_window_table, f"device_id {device_id} not in frame_window_table"
         self.frame_window_table[device_id]._update_image(device_id, frame_id, qimg, err_count)
 
+    @Slot()
+    def _on_vert_process_started(self, name):
+        print(f"[{name}] - ⏳ 启动中...")
+        log_utils.show_info_bar('success', f"⏳ 启动中...", title=name, parent=self)
+        self._update_process_status(name, self.icon_waiting)
+
+    
+    @Slot()
+    def _on_vert_process_finished(self, exit_code, exit_status, name):
+        print(f"[{name}] - ❌ 已退出 (code: {exit_code})")
+        # TODO
+        # log_utils.show_info_bar('warning', f"❌ 已退出 (code: {exit_code})", title=name, parent=self)
+        # self._update_process_status(name, self.icon_exit)
+
+    @Slot()
+    def _on_vert_process_error(self, name, errmsg):
+        print(f"[{name}] - ❗ 错误: {errmsg}")
+        # TODO
+        # log_utils.show_info_bar('error', f"{errmsg}", title=name, parent=self)
+        # self._update_process_status(name, self.icon_error)
+
+    @Slot()
+    def _on_vert_process_out(self, name, proc):
+        line = proc.readAllStandardOutput().data().decode('utf-8').strip()
+        print(f"[{name}] - ⚠️ {line}")
 
     @Slot(str)
     def _update_log(self, zmqmsg):
@@ -119,12 +222,17 @@ class MainWindow(QMainWindow):
         self.image_receiver_thread.set_paused(checked)
 
     def closeEvent(self, event):
-        print("关闭窗口，退出线程")
+        for proc in self.vert_processes.values():
+            proc.write(b'\n')
+            proc.waitForBytesWritten(6000)
+            proc.terminate()
+            proc.waitForFinished(1000)
+        print("✅ All VisionEdgeRT processes terminated.")
         self.image_receiver_thread.requestInterruption()
         self.image_receiver_thread.quit()
         self.image_receiver_thread.wait()
         self.log_receiver_thread.requestInterruption()
         self.log_receiver_thread.quit()
         self.log_receiver_thread.wait()
-        print("线程退出完毕")
+        print("✅ 线程退出完毕")
         event.accept()

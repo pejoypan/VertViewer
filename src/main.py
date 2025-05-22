@@ -4,7 +4,9 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), "assets"))
 
 from PySide6.QtWidgets import QApplication, QStyleFactory
+from PySide6.QtCore import Qt
 from widgets.mainwindow import MainWindow
+from qfluentwidgets import setTheme, Theme
 
 import argparse
 from pathlib import Path
@@ -15,8 +17,11 @@ if __name__ == "__main__":
     parser.add_argument('--config', type=str, help='configs for initialization', default='./init.yaml')
     args = parser.parse_args()
 
+    QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+    setTheme(Theme.AUTO)
+
     app = QApplication(sys.argv)
-    app.setStyle(QStyleFactory.create('windows11'))
+    # app.setStyle(QStyleFactory.create('windows11'))
 
     file_path = Path(args.config)
 

@@ -1,5 +1,7 @@
 import re
 
+from qfluentwidgets import InfoBar, InfoBarPosition
+
 log_pattern = re.compile(r"\[(.*?)\] \[(.*?)\] \[(.*?)\] (.*)")
 
 LEVEL_COLOR = {
@@ -31,3 +33,24 @@ def get_color(level: str):
 
 def get_emoji(level: str):
     return LEVEL_ICON.get(level.lower(), "⁉️")
+
+def show_info_bar(level, content, title=None, duration=5000, parent=None):
+    '''
+    level: success, info, warning, error
+    duration: -1 for permanent
+    '''
+    if level in ['success', 'info']:
+        dura = duration
+    elif level in ['warning', 'error']:
+        dura = -1
+    else:
+        level = 'info'
+        dura = duration
+
+    getattr(InfoBar, level)(
+        title=title if title else level,
+        content=content,
+        duration=dura,
+        position=InfoBarPosition.TOP,
+        parent=parent
+    )
